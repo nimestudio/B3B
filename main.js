@@ -1,3 +1,44 @@
+// Navbar logo interaction
+let mm = gsap.matchMedia();
+
+mm.add("(min-width: 1281px)", () => {
+  const logoWrap = document.querySelector('.navbar-logo-inner');
+  if (!logoWrap) return;
+
+  const logo = logoWrap.querySelector('.navbar-logo');
+  const logoHover = logoWrap.querySelector('.navbar-logo-hover');
+
+  const handleMouseEnter = () => {
+    gsap.to(logoWrap, { width: '386px', duration: 0.6, ease: 'power1.inOut', overwrite: 'auto' });
+    gsap.set(logo, { opacity: 0 });
+    gsap.set(logoHover, { opacity: 1 });
+  };
+
+  const handleMouseLeave = () => {
+    gsap.to(logoWrap, {
+      width: '137px',
+      duration: 0.6,
+      ease: 'power2.inOut',
+      overwrite: 'auto',
+      onComplete: () => {
+        gsap.set(logo, { opacity: 1 });
+        gsap.set(logoHover, { opacity: 0 });
+      }
+    });
+  };
+
+  logoWrap.addEventListener('mouseenter', handleMouseEnter);
+  logoWrap.addEventListener('mouseleave', handleMouseLeave);
+
+  return () => {
+    logoWrap.removeEventListener('mouseenter', handleMouseEnter);
+    logoWrap.removeEventListener('mouseleave', handleMouseLeave);
+    if (logoWrap) gsap.set(logoWrap, { clearProps: 'width' });
+    if (logo) gsap.set(logo, { clearProps: 'opacity' });
+    if (logoHover) gsap.set(logoHover, { clearProps: 'opacity' });
+  };
+});
+
 // Menu open/close interaction
 const menuTimeline = gsap.timeline({ paused: true, reversed: true });
 const contentToPush = document.querySelector('main') || document.querySelector('.main-content') || document.body;
@@ -18,7 +59,7 @@ menuTimeline.to('.navbar-overlay', {
   duration: 0.2
 }, 0);
 
-menuTimeline.to(['.button-nav-prueba', '.navbar-list', '.nav-bg'], {
+menuTimeline.to(['.button-nav-prueba', '.navbar-list', '.navbar-background'], {
   opacity: 0,
   duration: 0.3
 }, 0);
@@ -97,11 +138,18 @@ expandTriggers.forEach(trigger => {
         allWraps.forEach(wrap => {
             wrap.classList.remove('is-open');
             gsap.to(wrap, { height: 0, duration: 0.4, ease: 'power2.out' });
+            
+            const openParent = wrap.closest('.menu-list-item');
+            const openIconV = openParent.querySelector('.menu-list-expand-icon-v');
+            if (openIconV) gsap.to(openIconV, { rotation: 0, duration: 0.4, ease: 'power2.out' });
         });
 
         if (!isOpen) {
             targetWrap.classList.add('is-open');
             gsap.to(targetWrap, { height: 'auto', duration: 0.4, ease: 'power2.out' });
+            
+            const targetIconV = this.querySelector('.menu-list-expand-icon-v');
+            if (targetIconV) gsap.to(targetIconV, { rotation: 90, duration: 0.4, ease: 'power2.out' });
         }
     });
 });
@@ -176,6 +224,91 @@ if (window.location.pathname.startsWith('/studios/')) {
     if (studioLink) {
         studioLink.classList.add('w--current');
     }
+}
+
+// Hero carousel animation
+const slides = Array.from(document.querySelectorAll('.hero-carousel-image-wrap'));
+const carouselBtn = document.querySelector('.hero-carousel-button');
+
+if (slides.length > 1 && carouselBtn) {
+  gsap.set(carouselBtn, { display: 'block' });
+
+  const btnSlides = [];
+  const progressDivs = [];
+
+  slides.forEach((slide) => {
+    const clone = slide.cloneNode(true);
+    const img = clone.querySelector('.hero-carousel-image');
+    if (img) img.classList.add('is-button-img');
+  
+    const progress = document.createElement('div');
+    progress.classList.add('hero-carousel-progress');
+    clone.appendChild(progress);
+    carouselBtn.appendChild(clone);
+
+    btnSlides.push(clone);
+    progressDivs.push(progress);
+  });
+
+  let currentIndex = 0;
+  let btnIndex = 1;
+  let isAnimating = false;
+  let progressTween;
+
+  gsap.set(slides, { height: '0%', zIndex: 1 });
+  gsap.set(btnSlides, { height: '0%', zIndex: 1 });
+
+  gsap.set(slides[currentIndex], { height: '100%', zIndex: 2 });
+  gsap.set(btnSlides[btnIndex], { height: '100%', zIndex: 2 });
+  gsap.set(progressDivs[btnIndex], { xPercent: 0 });
+
+  function startProgress() {
+    progressTween = gsap.fromTo(
+      progressDivs[btnIndex],
+      { xPercent: 0 },
+      { xPercent: 100, duration: 5, ease: 'none', onComplete: doTransition }
+    );
+  }
+
+  function doTransition() {
+    if (isAnimating) return;
+    isAnimating = true;
+    if (progressTween) progressTween.kill();
+
+    const currentMain = slides[currentIndex];
+    const nextMainIndex = (currentIndex + 1) % slides.length;
+    const nextMain = slides[nextMainIndex];
+
+    const currentBtn = btnSlides[btnIndex];
+    const nextBtnIndex = (btnIndex + 1) % btnSlides.length;
+    const nextBtn = btnSlides[nextBtnIndex];
+
+    gsap.set(nextMain, { height: '0%', zIndex: 3 });
+    gsap.set(currentMain, { zIndex: 2 });
+
+    gsap.set(nextBtn, { height: '0%', zIndex: 3 });
+    gsap.set(currentBtn, { zIndex: 2 });
+    gsap.set(progressDivs[nextBtnIndex], { xPercent: 0 });
+
+    gsap.to([nextMain, nextBtn], {
+      height: '100%',
+      duration: 1,
+      ease: 'power2.inOut',
+      onComplete: () => {
+        gsap.set([currentMain, currentBtn], { height: '0%', zIndex: 1 });
+        currentIndex = nextMainIndex;
+        btnIndex = nextBtnIndex;
+        isAnimating = false;
+        startProgress();
+      }
+    });
+  }
+
+  startProgress();
+
+  carouselBtn.addEventListener('click', () => {
+    if (!isAnimating) doTransition();
+  });
 }
 
 // Footer claim reveal
