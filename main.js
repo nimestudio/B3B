@@ -39,10 +39,45 @@ mm.add("(min-width: 1281px)", () => {
   };
 });
 
+// Gradient Button Moving Circles
+document.querySelectorAll('.button-border-color-wrap').forEach((wrap) => {
+  const circles = wrap.querySelectorAll('.button-gradient-circle');
+  const spacing = 7;
+
+  circles.forEach((circle, index) => {
+    const startPos = index * spacing;
+    const proxy = { value: startPos };
+
+    circle.style.offsetDistance = `${startPos}%`;
+
+    const tl = gsap.timeline({ repeat: -1 });
+
+    tl.to(proxy, {
+      value: startPos + 50,
+      duration: 8,
+      ease: 'none',
+      onUpdate: () => {
+        circle.style.offsetDistance = `${proxy.value % 100}%`;
+      }
+    })
+    .to({}, { duration: 2 })
+    .to(proxy, {
+      value: startPos + 100,
+      duration: 8,
+      ease: 'none',
+      onUpdate: () => {
+        circle.style.offsetDistance = `${proxy.value % 100}%`;
+      }
+    })
+    .to({}, { duration: 2 });
+  });
+});
+
 // Menu open/close interaction
-const menuTimeline = gsap.timeline({ paused: true, reversed: true });
+const menuTimeline = gsap.timeline({ paused: true });
 const contentToPush = document.querySelector('main') || document.querySelector('.main-content') || document.body;
 let scrollY = 0;
+let isMenuOpen = false;
 
 if (contentToPush) {
   gsap.set(contentToPush, { y: 0 });
@@ -78,7 +113,6 @@ const cerrarText = document.querySelector('.menu-button-text.cerrar');
 
 function lockScroll() {
   scrollY = window.scrollY || window.pageYOffset || 0;
-
   document.body.style.position = 'fixed';
   document.body.style.top = `-${scrollY}px`;
   document.body.style.left = '0';
@@ -94,35 +128,57 @@ function unlockScroll() {
   document.body.style.right = '';
   document.body.style.width = '';
   document.documentElement.style.overflow = '';
-
   window.scrollTo(0, scrollY);
+}
+
+function openMenu() {
+  isMenuOpen = true;
+  history.pushState({ menuOpen: true }, '');
+  menuTimeline.play();
+  lockScroll();
+  if (menuText && cerrarText) {
+    gsap.to(menuText, { opacity: 0, duration: 0.2 });
+    gsap.to(cerrarText, { opacity: 1, duration: 0.2 });
+  }
+}
+
+function closeMenu() {
+  isMenuOpen = false;
+  menuTimeline.reverse();
+  unlockScroll();
+  if (menuText && cerrarText) {
+    gsap.to(cerrarText, { opacity: 0, duration: 0.2 });
+    gsap.to(menuText, { opacity: 1, duration: 0.2 });
+  }
 }
 
 if (menuTrigger) {
   menuTrigger.addEventListener('click', () => {
-    const isOpening = menuTimeline.reversed();
-
-    if (isOpening) {
-      menuTimeline.play();
-      lockScroll();
+    if (!isMenuOpen) {
+      openMenu();
     } else {
-      menuTimeline.reverse();
-      unlockScroll();
-    }
-
-    if (menuText && cerrarText) {
-      gsap.to(isOpening ? menuText : cerrarText, {
-        opacity: 0,
-        duration: 0.2
-      });
-
-      gsap.to(isOpening ? cerrarText : menuText, {
-        opacity: 1,
-        duration: 0.2
-      });
+      history.back();
     }
   });
 }
+
+window.addEventListener('popstate', () => {
+  if (isMenuOpen) {
+    closeMenu();
+  }
+});
+
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted && isMenuOpen) {
+    isMenuOpen = false;
+    menuTimeline.progress(0).pause();
+    unlockScroll();
+    if (menuText && cerrarText) {
+      gsap.set(cerrarText, { opacity: 0 });
+      gsap.set(menuText, { opacity: 1 });
+    }
+  }
+});
 
 // Expandable Menu List
 
@@ -154,7 +210,7 @@ expandTriggers.forEach(trigger => {
     });
 });
 
-// Navbar dropdown hover animation
+// Navbar studios dropdown animation
 const dropdownTrigger = document.querySelector('.navbar-list-item.navbar-list-item-dropdown');
 const dropdownListWrap = document.querySelector('.navbar-studio-items-wrap');
 const dropdownList = dropdownListWrap ? dropdownListWrap.querySelector('.navbar-studio-items') : null;
@@ -311,6 +367,24 @@ if (slides.length > 1 && carouselBtn) {
   });
 }
 
+// Hide navbar book button when footer is in view
+const buttonNavGradient = document.querySelector('.button-nav-gradient');
+const footer = document.querySelector('.footer');
+
+if (buttonNavGradient && footer) {
+  ScrollTrigger.create({
+    trigger: footer,
+    start: 'top 70%',
+    end: 'top 30%',
+    onEnter: () => {
+      gsap.to(buttonNavGradient, { opacity: 0, duration: 0.3 });
+    },
+    onEnterBack: () => {
+      gsap.to(buttonNavGradient, { opacity: 1, duration: 0.3 });
+    }
+  });
+}
+
 // Footer claim reveal
 gsap.registerPlugin(ScrollTrigger);
 
@@ -354,7 +428,41 @@ if (footerWrap) {
   }
 }
 
-// Update year
+// Footer Button Gradient Animation
+const wrap = document.querySelector('.footer-button-color-wrap');
+
+if (wrap) {
+  const circles = [
+    wrap.querySelector('.footer-circle-pink'),
+    wrap.querySelector('.footer-circle-yellow'),
+    wrap.querySelector('.footer-circle-lilac')
+  ].filter(Boolean);
+
+  circles.forEach((circle, index) => {
+    const width = circle.offsetWidth;
+    const radius = width * 0.25;
+    const direction = index % 2 === 0 ? 1 : -1;
+    const duration = 15 + index * 5;
+    const startAngle = index * 120;
+
+    const proxy = { angle: startAngle };
+
+    gsap.to(proxy, {
+      angle: `+=${360 * direction}`,
+      duration: duration,
+      ease: 'none',
+      repeat: -1,
+      onUpdate: () => {
+        const rad = proxy.angle * (Math.PI / 180);
+        const x = Math.cos(rad) * radius;
+        const y = Math.sin(rad) * radius;
+        gsap.set(circle, { x: x, y: y });
+      }
+    });
+  });
+}
+
+// Update copyright year
 const yearEl = document.querySelectorAll(".year");
 if (yearEl) {
   yearEl.forEach(year => {
