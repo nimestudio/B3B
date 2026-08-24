@@ -1,3 +1,18 @@
+// Navbar fade-in on page load
+
+document.addEventListener("DOMContentLoaded", () => {
+  const isHomepageLoaderPresent = document.querySelector(".hero-loader-wrap");
+  const navbar = document.querySelector(".navbar-overlay");
+  
+  if (!isHomepageLoaderPresent && navbar) {
+    gsap.to(navbar, {
+      opacity: 1,
+      duration: 1,
+      ease: "power2.out"
+    });
+  }
+});
+
 // Navbar logo interaction
 let mm = gsap.matchMedia();
 
@@ -371,8 +386,8 @@ if (slides.length > 1 && carouselBtn) {
 gsap.registerPlugin(ScrollTrigger);
 
 const conceptItems = document.querySelectorAll('.concept-item');
-const borderColors = ['#9984DF', '#CFAB32', '#E596BA'];
-const textColors = ['#C3B1FF', '#FFE383', '#FFBBDA'];
+const borderColors = ['var(--color--violet-stroke)', 'var(--color--yellow-stroke)', 'var(--color--pink-stroke)'];
+const textColors = ['var(--color--violet)', 'var(--color--yellow)', 'var(--color--pink)'];
 
 function setConceptItemsLayout() {
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
@@ -441,7 +456,7 @@ conceptItems.forEach((item, index) => {
   }
 });
 
-// After
+// After studios list
 const afterStudiosList = document.querySelector('.after-studios-list');
 const conceptsList = document.querySelector('.concepts-list');
 const conceptItemsNodeList = document.querySelectorAll('.concept-item');
@@ -549,10 +564,50 @@ if (wrap) {
   });
 }
 
+// Stop fading when scrolled till the end
+
+const scrollMaskElements = document.querySelectorAll('.filters-outer-wrap, .filtered-studios-list, .events-cards, .filters-outer-wrap-blog');
+
+const checkScrollMask = (el) => {
+  if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 5) {
+    el.classList.add('is-at-end');
+  } else {
+    el.classList.remove('is-at-end');
+  }
+};
+
+scrollMaskElements.forEach(el => {
+  checkScrollMask(el);
+  
+  el.addEventListener('scroll', () => {
+    checkScrollMask(el);
+  }, { passive: true });
+  
+  window.addEventListener('resize', () => {
+    checkScrollMask(el);
+  });
+});
+
 // Update copyright year
-const yearEl = document.querySelectorAll(".year");
+const yearEl = document.querySelectorAll('.year');
 if (yearEl) {
   yearEl.forEach(year => {
         year.textContent = new Date().getFullYear();
     });
 }
+
+// Highlight color animation
+const root = document.documentElement;
+const styles = getComputedStyle(root);
+
+const violet = styles.getPropertyValue('--color--violet').trim();
+const yellow = styles.getPropertyValue('--color--yellow').trim();
+const pink = styles.getPropertyValue('--color--pink').trim();
+
+gsap.set(root, { "--highlight": violet });
+
+const tl = gsap.timeline({ repeat: -1, defaults: { duration: 1, ease: 'none' } });
+
+tl.to(root, { "--highlight": yellow })
+  .to(root, { "--highlight": pink })
+  .to(root, { "--highlight": violet });
