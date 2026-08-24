@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const heroImages = document.querySelectorAll(".hero-image");
   const heroContent = document.querySelectorAll(".home-hero-wrap > *");
   const navbar = document.querySelector(".navbar-overlay");
+  const heroCursor = document.querySelector(".hero-cursor");
 
   if (!loaderWrap) return;
 
@@ -26,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
     borderRadius: "0.25rem"
   });
 
-  gsap.set(heroContent, {
+  gsap.set([heroContent, heroCursor], {
     opacity: 0
   });
 
@@ -37,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
   tl.to(gridContainer, {
     opacity: 1,
     duration: 1.5,
-    delay: 1,
+    delay: 0.6,
     ease: "power2.out"
   })
   .to(gridContainer, {
@@ -83,7 +84,12 @@ document.addEventListener("DOMContentLoaded", () => {
     duration: 0.8,
     stagger: 0.2,
     ease: "power2.out"
-  }, "<0.3");
+  }, "<0.3")
+  .to(heroCursor, {
+    opacity: 1,
+    duration: 0.5,
+    ease: "power2.out"
+  }, "<0.5");
 });
 
 // Hero cursor
