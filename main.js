@@ -1,14 +1,61 @@
-// Navbar fade-in on page load
-
+// ELements fade-in on page load
 document.addEventListener("DOMContentLoaded", () => {
   const isHomepageLoaderPresent = document.querySelector(".hero-loader-wrap");
+
+  if (isHomepageLoaderPresent) {
+    gsap.set("main > section, footer", { opacity: 1 });
+    return;
+  }
+
   const navbar = document.querySelector(".navbar-overlay");
-  
-  if (!isHomepageLoaderPresent && navbar) {
+  if (navbar) {
+    gsap.set(navbar, { y: "-100%" });
     gsap.to(navbar, {
-      opacity: 1,
+      y: "0%",
       duration: 1,
+      delay: 0.25,
       ease: "power2.out"
+    });
+  }
+
+  const elementsToFade = document.querySelectorAll("main > section, footer");
+  if (elementsToFade.length) {
+    gsap.fromTo(
+      elementsToFade,
+      { opacity: 0 },
+      {
+        opacity: 1,
+        duration: 1.5,
+        ease: "power1.out",
+        delay: 0.4,
+        stagger: 0.15
+      }
+    );
+  }
+});
+  
+// Lazy load videos
+document.addEventListener("DOMContentLoaded", function() {
+  let lazyVideos = [].slice.call(document.querySelectorAll("video.concept-video"));
+
+  if ("IntersectionObserver" in window) {
+    let lazyVideoObserver = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(function(video) {
+        if (video.isIntersecting) {
+          let vidEl = video.target;
+
+          if (vidEl.dataset.src) {
+            vidEl.src = vidEl.dataset.src;
+          }
+
+          vidEl.load();
+          lazyVideoObserver.unobserve(vidEl);
+        }
+      });
+    });
+
+    lazyVideos.forEach(function(lazyVideo) {
+      lazyVideoObserver.observe(lazyVideo);
     });
   }
 });
@@ -123,8 +170,8 @@ if (contentToPush) {
 }
 
 const menuTrigger = document.querySelector('.button-nav-menu');
-const menuText = document.querySelector('.menu-button-text');
-const cerrarText = document.querySelector('.menu-button-text.cerrar');
+const menuText = document.querySelector('.button-nav-menu > .button-text-wrap');
+const cerrarText = document.querySelector('.button-nav-menu > .button-text-wrap.cerrar');
 
 function lockScroll() {
   scrollY = window.scrollY || window.pageYOffset || 0;
@@ -255,8 +302,8 @@ if (dropdownTrigger && dropdownListWrap && dropdownItems.length) {
     gsap.to(dropdownItems, {
       opacity: 1,
       y: 0,
-      duration: 0.3,
-      stagger: { each: 0.03, from: 'start' },
+      duration: 1,
+      stagger: { each: 0.05, from: 'start' },
       ease: 'power2.out'
     });
   };
@@ -268,12 +315,14 @@ if (dropdownTrigger && dropdownListWrap && dropdownItems.length) {
       if (!dropdownTrigger.matches(':hover') && !dropdownListWrap.matches(':hover')) {
         gsap.to(dropdownItems, {
           opacity: 0,
-          duration: 0.3,
-          ease: 'power2.in',
+          y: 10,
+          duration: 0.5,
+          ease: 'power1.in',
           overwrite: true,
+          stagger: { each: 0.05, from: 'end' },
           onComplete: () => {
             gsap.set(dropdownListWrap, {
-              display: 'none'
+              display: 'none',
             });
           }
         });
@@ -387,7 +436,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 const conceptItems = document.querySelectorAll('.concept-item');
 const borderColors = ['var(--color--violet-stroke)', 'var(--color--yellow-stroke)', 'var(--color--pink-stroke)'];
-const textColors = ['var(--color--violet)', 'var(--color--yellow)', 'var(--color--pink)'];
+const bgColors = ['var(--color--violet)', 'var(--color--yellow)', 'var(--color--pink)'];
 
 function setConceptItemsLayout() {
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
@@ -395,7 +444,6 @@ function setConceptItemsLayout() {
   const baseTopSpace = isMobile ? 92 : 96;
 
   conceptItems.forEach((item, index) => {
-    item.style.borderColor = borderColors[index % borderColors.length];
     item.style.top = `calc(${baseTopSpace}px + ${index * offsetMultiplier}rem)`;
 
     const svgBg = item.querySelector('.concept-svg-bg');
@@ -414,23 +462,40 @@ conceptItems.forEach((item, index) => {
   const svgBg = item.querySelector('.concept-svg-bg');
   const infoWrap = item.querySelector('.concept-info-wrap');
   const videoWrap = item.querySelector('.concept-video-wrap');
+  
+  if (infoWrap) gsap.set(infoWrap, { opacity: 0, x: -50 });
+  if (videoWrap) gsap.set(videoWrap, { opacity: 0, x: 50 });
+  
+  const colorTl = gsap.timeline({
+    scrollTrigger: {
+      trigger: item,
+      start: () => {
+        const itemTop = parseFloat(window.getComputedStyle(item).top);
+        const dynamicOffset = window.innerHeight * 0.2;
+        return "top " + (itemTop + dynamicOffset) + "px";
+      },
+      toggleActions: "play none none reverse",
+      invalidateOnRefresh: true
+    }
+  });
 
   if (svgBg) {
-    gsap.fromTo(svgBg, 
+    colorTl.fromTo(svgBg, 
       { color: '#FFFFFF' }, 
       { 
-        color: textColors[index % textColors.length],
+        color: bgColors[index % bgColors.length],
         duration: 0.3,
-        ease: "power1.inOut",
-        scrollTrigger: {
-          trigger: item,
-          start: () => "top " + (parseFloat(window.getComputedStyle(item).top) + 150) + "px",
-          toggleActions: "play none none reverse",
-          invalidateOnRefresh: true
-        }
-      }
+        ease: "power1.inOut"
+      },
+      0
     );
   }
+
+  colorTl.to(item, {
+    borderColor: borderColors[index % borderColors.length],
+    duration: 0.3,
+    ease: "power1.inOut"
+  }, 0);
 
   const contentTl = gsap.timeline({
     scrollTrigger: {
@@ -440,19 +505,11 @@ conceptItems.forEach((item, index) => {
   });
 
   if (infoWrap) {
-    contentTl.fromTo(infoWrap, 
-      { opacity: 0, x: -50 }, 
-      { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }, 
-      0
-    );
+    contentTl.to(infoWrap, { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }, 0);
   }
 
   if (videoWrap) {
-    contentTl.fromTo(videoWrap, 
-      { opacity: 0, x: 50 }, 
-      { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }, 
-      0
-    );
+    contentTl.to(videoWrap, { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }, 0);
   }
 });
 
@@ -501,8 +558,8 @@ if (footerWrap) {
     const secondPaths = gsap.utils.toArray(secondSvg.querySelectorAll('path'));
 
     if (firstPaths.length && secondPaths.length) {
-      gsap.set(firstPaths, { yPercent: 120 });
-      gsap.set(secondPaths, { yPercent: 120 });
+      gsap.set(firstPaths, { yPercent: 120, transformOrigin: '50% 100%' });
+      gsap.set(secondPaths, { yPercent: 120, transformOrigin: '50% 100%' });
 
       ScrollTrigger.create({
         trigger: footerWrap,
@@ -515,16 +572,33 @@ if (footerWrap) {
 
           tl.to(firstPaths, {
             yPercent: 0,
-            duration: 1.5,
-            stagger: 0.1
+            duration: 1,
+            stagger: 0.08
           });
 
           tl.to(secondPaths, {
             yPercent: 0,
-            duration: 1.5,
-            stagger: 0.1
+            duration: 1,
+            stagger: 0.08
           }, '-=1.5');
         }
+      });
+
+      const allPaths = [...firstPaths, ...secondPaths];
+
+      allPaths.forEach(path => {
+        path.addEventListener('mouseenter', () => {
+          if (!gsap.isTweening(path)) {
+            gsap.to(path, {
+              keyframes: [
+                { skewX: -15, scaleY: 0.85, scaleX: 1.1, duration: 0.1, ease: 'power1.out' },
+                { skewX: 10, scaleY: 1.15, scaleX: 0.9, duration: 0.15, ease: 'power1.inOut' },
+                { skewX: -5, scaleY: 0.95, scaleX: 1.05, duration: 0.15, ease: 'power1.inOut' },
+                { skewX: 0, scaleY: 1, scaleX: 1, duration: 0.4, ease: 'elastic.out(1, 0.4)' }
+              ]
+            });
+          }
+        });
       });
     }
   }
@@ -564,7 +638,124 @@ if (wrap) {
   });
 }
 
-// Stop fading when scrolled till the end
+// Stagger fade in
+gsap.registerPlugin(ScrollTrigger);
+
+let mmFadein = gsap.matchMedia();
+
+mmFadein.add("(min-width: 992px)", () => {
+  ScrollTrigger.batch('[data-gsap="fade-up"]', {
+    start: 'top 85%',
+    onEnter: elements => gsap.fromTo(elements, 
+      {
+        y: 50,
+        opacity: 0
+      },
+      {
+        y: 0,
+        opacity: 1,
+        duration: 1.5,
+        ease: 'power2.out',
+        stagger: 0.2,
+        overwrite: true
+      }
+    )
+  });
+});
+
+
+// Concepts fade in animation
+document.addEventListener("DOMContentLoaded", () => {
+  const filtersSection = document.querySelector('.filtered-studios-list');
+  if (!filtersSection) return;
+
+  const studiosMm = gsap.matchMedia();
+  let isDesktop = false;
+
+  studiosMm.add("(min-width: 992px)", () => {
+    isDesktop = true;
+    gsap.set('.filtros-studio-item', { opacity: 0, y: 20 });
+    
+    return () => {
+      isDesktop = false;
+      gsap.set('.filtros-studio-item', { opacity: 1, y: 0, clearProps: "all" });
+    };
+  });
+
+  let hasAnimatedInitially = false;
+
+  function animateItems(container) {
+    const items = container.querySelectorAll('.filtros-studio-item');
+    if (items.length === 0) return;
+
+    gsap.killTweensOf(items);
+
+    if (isDesktop) {
+      gsap.set(items, { opacity: 0, y: 20 });
+      gsap.to(items, {
+        opacity: 1,
+        y: 0,
+        duration: 1.5,
+        delay: 0.2,
+        stagger: 0.2,
+        ease: "power2.out",
+        clearProps: "opacity,transform"
+      });
+    } else {
+      gsap.set(items, { opacity: 1, y: 0, clearProps: "all" });
+    }
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      hasAnimatedInitially = true;
+      const activePane = document.querySelector('.w-tab-pane.w--tab-active');
+      if (activePane) animateItems(activePane);
+      observer.disconnect();
+    }
+  }, { threshold: 0.15 });
+
+  observer.observe(filtersSection);
+
+  const tabPanes = document.querySelectorAll('.w-tab-pane');
+    
+  tabPanes.forEach(pane => {
+    const mutObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class' && pane.classList.contains('w--tab-active')) {
+          if (!hasAnimatedInitially) {
+            hasAnimatedInitially = true;
+            observer.disconnect();
+          }
+          animateItems(pane);
+        }
+      });
+    });
+    mutObserver.observe(pane, { attributes: true });
+  });
+
+  window.fsAttributes = window.fsAttributes || [];
+  window.fsAttributes.push([
+    'cmsfilter',
+    (filterInstances) => {
+      filterInstances.forEach(filterInstance => {
+        filterInstance.listInstance.on('renderitems', () => {
+          const activePane = document.querySelector('.w-tab-pane.w--tab-active');
+          if (activePane && activePane.contains(filterInstance.listInstance.list)) {
+            if (!hasAnimatedInitially) {
+              hasAnimatedInitially = true;
+              observer.disconnect();
+            }
+            animateItems(activePane);
+          }
+        });
+      });
+    }
+  ]);
+});
+
+
+// Stop fading edge when scrolled till the end
 
 const scrollMaskElements = document.querySelectorAll('.filters-outer-wrap, .filtered-studios-list, .events-cards, .filters-outer-wrap-blog');
 
@@ -604,10 +795,14 @@ const violet = styles.getPropertyValue('--color--violet').trim();
 const yellow = styles.getPropertyValue('--color--yellow').trim();
 const pink = styles.getPropertyValue('--color--pink').trim();
 
-gsap.set(root, { "--highlight": violet });
+const highlightMm = gsap.matchMedia();
 
-const tl = gsap.timeline({ repeat: -1, defaults: { duration: 1, ease: 'none' } });
+highlightMm.add("(min-width: 992px)", () => {
+  gsap.set(root, { "--highlight": violet });
 
-tl.to(root, { "--highlight": yellow })
-  .to(root, { "--highlight": pink })
-  .to(root, { "--highlight": violet });
+  const tl = gsap.timeline({ repeat: -1, defaults: { duration: 1, ease: 'none' } });
+
+  tl.to(root, { "--highlight": yellow })
+    .to(root, { "--highlight": pink })
+    .to(root, { "--highlight": violet });
+});

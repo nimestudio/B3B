@@ -12,25 +12,28 @@ const loop = gsap.to(marqueeWrapper, {
 });
 
 const clampVelocity = gsap.utils.clamp(1, 5);
+const marqueeMm = gsap.matchMedia();
 
-ScrollTrigger.create({
-  onUpdate: (self) => {
-    const scrollVelocity = Math.abs(self.getVelocity() / 300);
-    const targetScale = clampVelocity(1 + scrollVelocity);
+marqueeMm.add("(min-width: 992px)", () => {
+  ScrollTrigger.create({
+    onUpdate: (self) => {
+      const scrollVelocity = Math.abs(self.getVelocity() / 300);
+      const targetScale = clampVelocity(1 + scrollVelocity);
 
-    gsap.to(loop, {
-      timeScale: targetScale,
-      duration: 0.2,
-      overwrite: true,
-      onComplete: () => {
-        gsap.to(loop, {
-          timeScale: 1,
-          duration: 1.5,
-          ease: 'power2.out'
-        });
-      }
-    });
-  }
+      gsap.to(loop, {
+        timeScale: targetScale,
+        duration: 0.2,
+        overwrite: true,
+        onComplete: () => {
+          gsap.to(loop, {
+            timeScale: 1,
+            duration: 1.5,
+            ease: 'power2.out'
+          });
+        }
+      });
+    }
+  });
 });
 
 // Impact Interactive Infographic
