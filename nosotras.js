@@ -7,7 +7,7 @@ const marqueeWrapper = document.querySelector('.marquee-wrapper');
 const loop = gsap.to(marqueeWrapper, {
   xPercent: -50,
   repeat: -1,
-  duration: 30,
+  duration: 50,
   ease: 'none'
 });
 

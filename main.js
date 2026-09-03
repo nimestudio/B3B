@@ -1,4 +1,4 @@
-// ELements fade-in on page load
+  // ELements fade-in on page load
 document.addEventListener("DOMContentLoaded", () => {
   const isHomepageLoaderPresent = document.querySelector(".hero-loader-wrap");
 
@@ -147,6 +147,7 @@ if (contentToPush) {
 
 menuTimeline.to('.menu', {
   height: '100dvh',
+  display: 'block',
   duration: 1,
   ease: 'power2.inOut'
 }, 0);
@@ -359,7 +360,10 @@ if (slides.length > 1 && carouselBtn) {
   slides.forEach((slide) => {
     const clone = slide.cloneNode(true);
     const img = clone.querySelector('.hero-carousel-image');
-    if (img) img.classList.add('is-button-img');
+    if (img) {
+      img.classList.remove('hero-carousel-image');
+      img.classList.add('is-button-img');
+    }
   
     const progress = document.createElement('div');
     progress.classList.add('hero-carousel-progress');
@@ -437,6 +441,7 @@ gsap.registerPlugin(ScrollTrigger);
 const conceptItems = document.querySelectorAll('.concept-item');
 const borderColors = ['var(--color--violet-stroke)', 'var(--color--yellow-stroke)', 'var(--color--pink-stroke)'];
 const bgColors = ['var(--color--violet)', 'var(--color--yellow)', 'var(--color--pink)'];
+const conceptMedia = gsap.matchMedia();
 
 function setConceptItemsLayout() {
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
@@ -462,9 +467,6 @@ conceptItems.forEach((item, index) => {
   const svgBg = item.querySelector('.concept-svg-bg');
   const infoWrap = item.querySelector('.concept-info-wrap');
   const videoWrap = item.querySelector('.concept-video-wrap');
-  
-  if (infoWrap) gsap.set(infoWrap, { opacity: 0, x: -50 });
-  if (videoWrap) gsap.set(videoWrap, { opacity: 0, x: 50 });
   
   const colorTl = gsap.timeline({
     scrollTrigger: {
@@ -497,20 +499,25 @@ conceptItems.forEach((item, index) => {
     ease: "power1.inOut"
   }, 0);
 
-  const contentTl = gsap.timeline({
-    scrollTrigger: {
-      trigger: item,
-      start: "top 80%"
+  conceptMedia.add("(min-width: 768px)", () => {
+    if (infoWrap) gsap.set(infoWrap, { opacity: 0, x: -50 });
+    if (videoWrap) gsap.set(videoWrap, { opacity: 0, x: 50 });
+
+    const contentTl = gsap.timeline({
+      scrollTrigger: {
+        trigger: item,
+        start: "top 80%"
+      }
+    });
+
+    if (infoWrap) {
+      contentTl.to(infoWrap, { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }, 0);
+    }
+
+    if (videoWrap) {
+      contentTl.to(videoWrap, { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }, 0);
     }
   });
-
-  if (infoWrap) {
-    contentTl.to(infoWrap, { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }, 0);
-  }
-
-  if (videoWrap) {
-    contentTl.to(videoWrap, { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }, 0);
-  }
 });
 
 // After studios list
@@ -637,32 +644,6 @@ if (wrap) {
     });
   });
 }
-
-// Stagger fade in
-gsap.registerPlugin(ScrollTrigger);
-
-let mmFadein = gsap.matchMedia();
-
-mmFadein.add("(min-width: 992px)", () => {
-  ScrollTrigger.batch('[data-gsap="fade-up"]', {
-    start: 'top 85%',
-    onEnter: elements => gsap.fromTo(elements, 
-      {
-        y: 50,
-        opacity: 0
-      },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 1.5,
-        ease: 'power2.out',
-        stagger: 0.2,
-        overwrite: true
-      }
-    )
-  });
-});
-
 
 // Concepts fade in animation
 document.addEventListener("DOMContentLoaded", () => {
