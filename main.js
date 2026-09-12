@@ -96,32 +96,44 @@ function initInactivityScreen() {
     }, 1500);
   }
 
-  function pushOneLogo(removeOldest = false) {
-    if (removeOldest && logoElements.length > 0) {
-      logoElements.shift()?.remove();
-    }
-
-    const logoContainer = document.createElement("div");
-    logoContainer.classList.add("inactivity-logo-container");
-
-    const img = document.createElement("img");
-    const randomIndex = Math.floor(Math.random() * logoUrls.length);
-    img.setAttribute("src", logoUrls[randomIndex]);
-
-    logoContainer.appendChild(img);
-    logoElements.push(logoContainer);
-    container.appendChild(logoContainer);
-    stickersCount++;
-
-    const spawnPos = getRandomSpawnPosition();
-    const targetPos = getRandomTargetPosition(spawnPos.x);
-
-    gsap.fromTo(
-      logoContainer,
-      { x: `${spawnPos.x}vw`, y: `${spawnPos.y}vh`, rotation: 0 },
-      { x: `${targetPos.x}vw`, y: `${targetPos.y}vh`, rotation: targetPos.rotation }
-    );
+function pushOneLogo(removeOldest = false) {
+  if (removeOldest && logoElements.length > 0) {
+    logoElements.shift()?.remove();
   }
+
+  const logoContainer = document.createElement("div");
+  logoContainer.classList.add("inactivity-logo-container");
+
+  const img = document.createElement("img");
+  const randomIndex = Math.floor(Math.random() * logoUrls.length);
+  img.setAttribute("src", logoUrls[randomIndex]);
+
+  logoContainer.appendChild(img);
+  logoElements.push(logoContainer);
+  container.appendChild(logoContainer);
+  stickersCount++;
+
+  const spawnPos = getRandomSpawnPosition();
+  const targetPos = getRandomTargetPosition(spawnPos.x);
+
+  gsap.fromTo(
+    logoContainer,
+    { 
+      x: `${spawnPos.x}vw`, 
+      y: `${spawnPos.y}vh`, 
+      rotation: 0,
+      xPercent: -50,
+      yPercent: -50 
+    },
+    { 
+      x: `${targetPos.x}vw`, 
+      y: `${targetPos.y}vh`, 
+      rotation: targetPos.rotation,
+      xPercent: -50,
+      yPercent: -50 
+    }
+  );
+}
 
   function hideLogos() {
     isHiding = true;
