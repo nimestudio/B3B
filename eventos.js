@@ -1,6 +1,3 @@
-// Air datepicker
-<script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.3.2/air-datepicker.min.js"></script>
-  
 // Logos marquee
 const initMarquee = () => {
   const marqueeTracks = document.querySelectorAll('.events-logos-marquee-track');
