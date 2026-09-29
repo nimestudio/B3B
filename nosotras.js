@@ -1,5 +1,4 @@
-
-  gsap.registerPlugin(ScrollTrigger, Draggable);
+gsap.registerPlugin(ScrollTrigger, Draggable);
 
 // Photos Marquee
 const initPhotosMarquee = () => {
@@ -459,11 +458,9 @@ const initTestimonials = () => {
         once: true,
         onEnter: batchElements => gsap.fromTo(batchElements, 
           {
-            y: 50,
             opacity: 0
           },
           {
-            y: 0,
             opacity: 1,
             duration: 1.5,
             ease: 'power2.out',
@@ -476,13 +473,13 @@ const initTestimonials = () => {
   }
 };
 
+// Run scripts
 const initPage = () => {
   initPhotosMarquee();
   initCultureInfographic();
   initTestimonials();
 };
 
-// Initialize the page when DOM is ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initPage);
 } else {

@@ -1,280 +1,9 @@
 gsap.registerPlugin(ScrollTrigger);
 
-// Standby
-function initInactivityScreen() {
-  const hasCursor = window.matchMedia(
-    '(hover: hover) and (pointer: fine)'
-  ).matches;
-
-  const container = document.querySelector(".inactivity-container");
-  if (!hasCursor || !container) return;
-
-  const background = document.querySelector(".inactivity-background");
-
-  const CONFIG = {
-    from: { max: 100, min: 20 },
-    inactivity_delay: 30000,
-    maxStickers: 100
-  };
-
-  const logoUrls = [
-    "https://cdn.prod.website-files.com/6a6468714fc7c4945835d72b/6a9ef0e09395eaa340fea8fa_sticker-3.svg",
-    "https://cdn.prod.website-files.com/6a6468714fc7c4945835d72b/6a9ef0e01b7d6958afbbf818_sticker-1.svg",
-    "https://cdn.prod.website-files.com/6a6468714fc7c4945835d72b/6a9ef0e06a244d153d6e636b_sticker-2.svg"
-  ];
-
-  const logoElements = [];
-
-  let isHiding = false;
-  let isWaiting = false;
-  let stickersCount = 0;
-  let fillInterval;
-  let mouseTimeout;
-
-  function throttle(callback) {
-    let isThrottled = false;
-    return function (...args) {
-      if (!isThrottled) {
-        requestAnimationFrame(() => {
-          callback.apply(this, args);
-          isThrottled = false;
-        });
-        isThrottled = true;
-      }
-    };
-  }
-
-  function detectInactivity(onInactive, delay) {
-    const resetTimer = () => {
-      if (isHiding) {
-        clearTimeout(mouseTimeout);
-        clearInterval(fillInterval);
-        return;
-      }
-      if (isWaiting) {
-        hideLogos();
-      }
-      clearTimeout(mouseTimeout);
-      clearInterval(fillInterval);
-      mouseTimeout = setTimeout(onInactive, delay);
-      stickersCount = 0;
-    };
-
-    document.addEventListener("mousemove", throttle(resetTimer));
-    document.addEventListener("scroll", throttle(resetTimer));
-    document.addEventListener("click", throttle(resetTimer));
-    document.addEventListener("touchstart", throttle(resetTimer));
-
-    const iframes = document.querySelectorAll("iframe");
-    iframes.forEach((iframe) => {
-      iframe.addEventListener("pointerdown", resetTimer);
-      iframe.addEventListener("touchstart", resetTimer);
-      iframe.addEventListener("mouseover", resetTimer);
-      iframe.addEventListener("mousedown", resetTimer);
-    });
-
-    window.addEventListener("blur", resetTimer);
-
-    resetTimer();
-  }
-
-  function fillScreen() {
-    isWaiting = true;
-    gsap.set(container, { display: "flex" });
-    gsap.fromTo(
-      background,
-      { opacity: 0, backdropFilter: "blur(0px)" },
-      { opacity: 1, backdropFilter: "blur(20px)", duration: 0.8 }
-    );
-
-    fillInterval = setInterval(() => {
-      if (stickersCount > CONFIG.maxStickers) {
-        pushOneLogo(true);
-      } else {
-        pushOneLogo();
-      }
-    }, 1500);
-  }
-
-function pushOneLogo(removeOldest = false) {
-  if (removeOldest && logoElements.length > 0) {
-    logoElements.shift()?.remove();
-  }
-
-  const logoContainer = document.createElement("div");
-  logoContainer.classList.add("inactivity-logo-container");
-
-  const img = document.createElement("img");
-  const randomIndex = Math.floor(Math.random() * logoUrls.length);
-  img.setAttribute("src", logoUrls[randomIndex]);
-
-  logoContainer.appendChild(img);
-  logoElements.push(logoContainer);
-  container.appendChild(logoContainer);
-  stickersCount++;
-
-  const spawnPos = getRandomSpawnPosition();
-  const targetPos = getRandomTargetPosition(spawnPos.x);
-
-  gsap.fromTo(
-    logoContainer,
-    { 
-      x: `${spawnPos.x}vw`, 
-      y: `${spawnPos.y}vh`, 
-      rotation: 0,
-      xPercent: -50,
-      yPercent: -50 
-    },
-    { 
-      x: `${targetPos.x}vw`, 
-      y: `${targetPos.y}vh`, 
-      rotation: targetPos.rotation,
-      xPercent: -50,
-      yPercent: -50 
-    }
-  );
-}
-
-  function hideLogos() {
-    isHiding = true;
-    let remainingLogos = logoElements.length;
-
-    if (logoElements.length > 0) {
-      logoElements.forEach((element) => {
-        animateLogoExit(element, () => {
-          remainingLogos--;
-          if (remainingLogos === 0) {
-            isHiding = false;
-            isWaiting = false;
-            logoElements.length = 0;
-            clearInterval(fillInterval);
-            clearTimeout(mouseTimeout);
-            mouseTimeout = setTimeout(fillScreen, CONFIG.inactivity_delay);
-          }
-        });
-      });
-    } else {
-      gsap.to(background, {
-        opacity: 0,
-        backdropFilter: "blur(0px)",
-        duration: 0.5,
-        onComplete() {
-          container.style.display = "none";
-        }
-      });
-      isHiding = false;
-      isWaiting = false;
-      clearInterval(fillInterval);
-      clearTimeout(mouseTimeout);
-      mouseTimeout = setTimeout(fillScreen, CONFIG.inactivity_delay);
-    }
-  }
-
-  function getRandomSpawnPosition() {
-    const { max, min } = CONFIG.from;
-    return Math.random() < 0.5
-      ? { x: Math.random() * 120 - min, y: Math.random() < 0.5 ? max : -min }
-      : { x: Math.random() < 0.5 ? max : -min, y: Math.random() * (max - min) + min };
-  }
-
-  function getRandomTargetPosition(x) {
-    return {
-      x: x < 50
-        ? Math.random() * 30 + 20
-        : 50 + Math.random() * 30,
-      y: Math.random() * 80 + 10,
-      rotation: (Math.random() - 0.5) * 60
-    };
-  }
-
-  function getLogoScreenPosition(element) {
-    const rect = element.getBoundingClientRect();
-    return {
-      x: ((rect.left + rect.width / 2) / window.innerWidth) * 100,
-      y: ((rect.top + rect.height / 2) / window.innerHeight) * 100
-    };
-  }
-
-  function calculateExitPosition(pos) {
-    const angle = Math.atan2(pos.y - 50, pos.x - 50);
-    return {
-      x: 50 + Math.cos(angle) * 150,
-      y: 50 + Math.sin(angle) * 150
-    };
-  }
-
-  function animateLogoExit(element, callback) {
-    const screenPos = getLogoScreenPosition(element);
-    const exitPos = calculateExitPosition(screenPos);
-
-    gsap.to(element, {
-      x: `${exitPos.x}vw`,
-      y: `${exitPos.y}vh`,
-      duration: 1.8,
-      ease: "power2.out",
-      onComplete: () => {
-        element.remove();
-        callback?.();
-      }
-    });
-
-    gsap.to(background, {
-      opacity: 0,
-      backdropFilter: "blur(0px)",
-      duration: 0.8,
-      onComplete() {
-        container.style.display = "none";
-      }
-    });
-  }
-
-  detectInactivity(() => {
-    fillScreen();
-  }, CONFIG.inactivity_delay);
-}
-
-// Buttons
-const filterButtonsStates = () => {
-  const hasCursor = window.matchMedia(
-    '(hover: hover) and (pointer: fine)'
-  ).matches;
-
-  const filterButtons = document.querySelectorAll('.filter-button');
-
-  filterButtons.forEach((button) => {
-    const buttonTexts = button.querySelectorAll('.button-text');
-
-    if (!buttonTexts.length) return;
-
-    if (hasCursor) {
-      button.addEventListener('mouseenter', () => {
-        gsap.to(buttonTexts, {
-          yPercent: -100,
-          duration: 0.5,
-          ease: 'expo.out',
-        });
-        gsap.to(button, {
-          backgroundColor: '#e1e1e1',
-          duration: 0.3,
-          overwrite: 'auto',
-        });
-      });
-
-      button.addEventListener('mouseleave', () => {
-        gsap.to(buttonTexts, {
-          yPercent: 0,
-          duration: 0.5,
-          ease: 'expo.out',
-        });
-        gsap.to(button, {
-          backgroundColor: '',
-          duration: 0.3,
-          overwrite: 'auto',
-        });
-      });
-    }
-  });
-};
+window.pageRevealedFlag = false;
+window.addEventListener("pageReveal", () => {
+  window.pageRevealedFlag = true;
+});
   
 // Initialize page fade-in for non-homepage pages
 const initPageFadeIn = () => {
@@ -506,20 +235,20 @@ const initNavGradients = () => {
     const tl = gsap.timeline({ repeat: -1 });
     tl.to(proxy, {
       value: 50,
-      duration: 8,
+      duration: 5,
       ease: 'none',
       onUpdate: () => movingElement.style.offsetDistance = `${proxy.value % 100}%`
     })
     .to({}, { duration: 2 })
     .to(proxy, {
       value: 100,
-      duration: 8,
+      duration: 5,
       ease: 'none',
       onUpdate: () => movingElement.style.offsetDistance = `${proxy.value % 100}%`
     })
     .to({}, { duration: 2 });
 
-    gsap.to(movingElement, { rotation: '+=360', duration: 18, ease: 'none', repeat: -1 });
+    gsap.to(movingElement, { rotation: '+=360', duration: 12, ease: 'none', repeat: -1 });
 
     if (hasCursor) {
       let xTo, yTo;
@@ -573,6 +302,49 @@ const initNavGradients = () => {
           onComplete: () => {
             tl.restart();
           }
+        });
+      });
+    }
+  });
+};
+
+// Filter buttons hover
+const filterButtonsStates = () => {
+  const hasCursor = window.matchMedia(
+    '(hover: hover) and (pointer: fine)'
+  ).matches;
+
+  const filterButtons = document.querySelectorAll('.filter-button');
+
+  filterButtons.forEach((button) => {
+    const buttonTexts = button.querySelectorAll('.button-text');
+
+    if (!buttonTexts.length) return;
+
+    if (hasCursor) {
+      button.addEventListener('mouseenter', () => {
+        gsap.to(buttonTexts, {
+          yPercent: -100,
+          duration: 0.5,
+          ease: 'expo.out',
+        });
+        gsap.to(button, {
+          backgroundColor: '#e1e1e1',
+          duration: 0.2,
+          overwrite: 'auto',
+        });
+      });
+
+      button.addEventListener('mouseleave', () => {
+        gsap.to(buttonTexts, {
+          yPercent: 0,
+          duration: 0.5,
+          ease: 'expo.out',
+        });
+        gsap.to(button, {
+          backgroundColor: '',
+          duration: 0.2,
+          overwrite: 'auto',
         });
       });
     }
@@ -658,9 +430,13 @@ const initLinesReveal = (isResize = false) => {
 
     if (isLoadTrigger) {
       if (!isResize) {
-        window.addEventListener("pageReveal", () => {
+        if (window.pageRevealedFlag) {
           gsap.to(targets, { yPercent: 0, opacity: 1, duration: 1.5, stagger: 0.1, ease: 'power3.out' });
-        });
+        } else {
+          window.addEventListener("pageReveal", () => {
+            gsap.to(targets, { yPercent: 0, opacity: 1, duration: 1.5, stagger: 0.1, ease: 'power3.out' });
+          });
+        }
       } else {
         gsap.to(targets, { yPercent: 0, opacity: 1, duration: 1.5, stagger: 0.1, ease: 'power3.out' });
       }
@@ -785,45 +561,48 @@ const initExpandableMenu = () => {
   });
 };
 
-// Navbar studios dropdown
+// Navbar dropdown list animation (studios and language)
 const initNavbarDropdown = () => {
-  const dropdownTrigger = document.querySelector('.navbar-list-item.navbar-list-item-dropdown');
-  const dropdownListWrap = document.querySelector('.navbar-studio-items-wrap');
-  if (!dropdownTrigger || !dropdownListWrap) return;
+  const dropdownTriggers = document.querySelectorAll('.navbar-dropdown');
 
-  const dropdownList = dropdownListWrap.querySelector('.navbar-studio-items');
-  const dropdownItems = dropdownList ? Array.from(dropdownList.querySelectorAll('.navbar-studio-item')) : [];
-  if (!dropdownItems.length) return;
+  dropdownTriggers.forEach(dropdownTrigger => {
+    const dropdownListWrap = dropdownTrigger.querySelector('.navbar-dropdown-content') || dropdownTrigger.parentNode.querySelector('.navbar-dropdown-content');
+    if (!dropdownListWrap) return;
 
-  gsap.set(dropdownItems, { opacity: 0, y: 10 });
-  gsap.set(dropdownListWrap, { display: 'none' });
+    const dropdownList = dropdownListWrap.querySelector('.navbar-dropdown-items');
+    const dropdownItems = dropdownList ? Array.from(dropdownList.querySelectorAll('.navbar-dropdown-item')) : [];
+    if (!dropdownItems.length) return;
 
-  let hideTimer;
+    gsap.set(dropdownItems, { opacity: 0, y: 10 });
+    gsap.set(dropdownListWrap, { display: 'none' });
 
-  const showDropdown = () => {
-    clearTimeout(hideTimer);
-    gsap.set(dropdownListWrap, { display: 'block' });
-    gsap.to(dropdownItems, {
-      opacity: 1, y: 0, duration: 1, stagger: { each: 0.05, from: 'start' }, ease: 'power2.out', overwrite: true
-    });
-  };
+    let hideTimer;
 
-  const hideDropdown = () => {
-    clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => {
-      if (!dropdownTrigger.matches(':hover') && !dropdownListWrap.matches(':hover')) {
-        gsap.to(dropdownItems, {
-          opacity: 0, y: 10, duration: 0.5, ease: 'power1.in', overwrite: true, stagger: { each: 0.05, from: 'end' },
-          onComplete: () => gsap.set(dropdownListWrap, { display: 'none' })
-        });
-      }
-    }, 40);
-  };
+    const showDropdown = () => {
+      clearTimeout(hideTimer);
+      gsap.set(dropdownListWrap, { display: 'block' });
+      gsap.to(dropdownItems, {
+        opacity: 1, y: 0, duration: 1, stagger: { each: 0.05, from: 'start' }, ease: 'power2.out', overwrite: true
+      });
+    };
 
-  dropdownTrigger.addEventListener('mouseenter', showDropdown);
-  dropdownTrigger.addEventListener('mouseleave', hideDropdown);
-  dropdownListWrap.addEventListener('mouseenter', showDropdown);
-  dropdownListWrap.addEventListener('mouseleave', hideDropdown);
+    const hideDropdown = () => {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => {
+        if (!dropdownTrigger.matches(':hover') && !dropdownListWrap.matches(':hover')) {
+          gsap.to(dropdownItems, {
+            opacity: 0, y: 10, duration: 0.5, ease: 'power1.in', overwrite: true, stagger: { each: 0.05, from: 'end' },
+            onComplete: () => gsap.set(dropdownListWrap, { display: 'none' })
+          });
+        }
+      }, 40);
+    };
+
+    dropdownTrigger.addEventListener('mouseenter', showDropdown);
+    dropdownTrigger.addEventListener('mouseleave', hideDropdown);
+    dropdownListWrap.addEventListener('mouseenter', showDropdown);
+    dropdownListWrap.addEventListener('mouseleave', hideDropdown);
+  });
 };
 
 // Navbar studios current link highlight
@@ -1001,80 +780,6 @@ const initFadeUpStagger = () => {
   });
 };
 
-// Load filtered studios list with fade-in animation
-const initFiltersAnimation = () => {
-  const filtersSection = document.querySelector('.filtered-studios-list');
-  if (!filtersSection) return;
-
-  const studiosMm = gsap.matchMedia();
-  let isDesktop = false;
-
-  studiosMm.add("(min-width: 992px)", () => {
-    isDesktop = true;
-    gsap.set('.filtros-studio-item', { opacity: 0, y: 20 });
-    return () => {
-      isDesktop = false;
-      gsap.set('.filtros-studio-item', { opacity: 1, y: 0, clearProps: "all" });
-    };
-  });
-
-  let hasAnimatedInitially = false;
-
-  const animateItems = (container) => {
-    const items = container.querySelectorAll('.filtros-studio-item');
-    if (!items.length) return;
-    gsap.killTweensOf(items);
-
-    if (isDesktop) {
-      gsap.set(items, { opacity: 0, y: 20 });
-      gsap.to(items, { opacity: 1, y: 0, duration: 1.5, delay: 0.2, stagger: 0.2, ease: "power2.out", clearProps: "opacity,transform" });
-    } else {
-      gsap.set(items, { opacity: 1, y: 0, clearProps: "all" });
-    }
-  };
-
-  const observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) {
-      hasAnimatedInitially = true;
-      const activePane = document.querySelector('.w-tab-pane.w--tab-active');
-      if (activePane) animateItems(activePane);
-      observer.disconnect();
-    }
-  }, { threshold: 0.15 });
-
-  observer.observe(filtersSection);
-
-  document.querySelectorAll('.w-tab-pane').forEach(pane => {
-    new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'class' && pane.classList.contains('w--tab-active')) {
-          if (!hasAnimatedInitially) {
-            hasAnimatedInitially = true;
-            observer.disconnect();
-          }
-          animateItems(pane);
-        }
-      });
-    }).observe(pane, { attributes: true });
-  });
-
-  window.fsAttributes = window.fsAttributes || [];
-  window.fsAttributes.push(['cmsfilter', (filterInstances) => {
-    filterInstances.forEach(filterInstance => {
-      filterInstance.listInstance.on('renderitems', () => {
-        const activePane = document.querySelector('.w-tab-pane.w--tab-active');
-        if (activePane && activePane.contains(filterInstance.listInstance.list)) {
-          if (!hasAnimatedInitially) {
-            hasAnimatedInitially = true;
-            observer.disconnect();
-          }
-          animateItems(activePane);
-        }
-      });
-    });
-  }]);
-};
-
 // Fade out scroll masks when scrolled to the end of a container
 const initScrollMasks = () => {
   const elements = document.querySelectorAll('.filters-scroll-wrap, .filtered-studios-list, .events-cards, .filters-scroll-wrap-blog');
@@ -1190,6 +895,49 @@ const initFooterEffects = () => {
   }
 };
 
+// Newsletter form
+function initNewsletterForm() {
+    const form = document.getElementById("momence-webflow-form");
+    const successMessage = document.getElementById("momence-success");
+
+    if (form) {
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const formData = new FormData(form);
+            
+            const values = {
+                sourceId: 265754,
+                token: "A3Xzk51EjO",
+                email: formData.get("email")
+            };
+
+            try {
+                const rawResult = await fetch("https://api.momence.com/integrations/customer-leads/291318/collect", {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    method: "POST",
+                    body: JSON.stringify(values),
+                });
+
+                if (!rawResult.ok) {
+                    const result = await rawResult.json();
+                    throw new Error(result.error);
+                }
+
+                form.style.display = "none";
+                if (successMessage) {
+                    successMessage.style.display = "block";
+                }
+            } catch (e) {
+                alert(e);
+            }
+        });
+    }
+}
+
 // Update year in footer
 const initYear = () => {
   document.querySelectorAll('.year').forEach(year => year.textContent = new Date().getFullYear());
@@ -1220,22 +968,37 @@ const initApp = () => {
   initLazyVideos();
   initNavbarLogo();
   initNavGradients();
-  initLinesReveal();
+  initLinesRevealWhenFontsReady();
   initMenu();
   initExpandableMenu();
   initNavbarDropdown();
   initCurrentLink();
   initHeroCarousel();
   initConceptsList();
-  initFooterEffects();
   initFadeUpStagger();
-  initFiltersAnimation();
   initScrollMasks();
+  initFooterEffects();
+  initNewsletterForm();
   initYear();
   initHighlightColor();
   filterButtonsStates();
-  initInactivityScreen();
 };
+
+function initLinesRevealWhenFontsReady() {
+  const fallback = setTimeout(() => {
+    initLinesReveal();
+  }, 1000);
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      clearTimeout(fallback);
+      initLinesReveal();
+    });
+  } else {
+    clearTimeout(fallback);
+    initLinesReveal();
+  }
+}
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initApp);
