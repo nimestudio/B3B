@@ -11,7 +11,7 @@ const initBonos = () => {
     'Lila 1': { bg: '#F4F0FF', border: '#9984DF' },
     'Lila 2': { bg: '#EBE4FF', border: '#9984DF' },
     'Lila 3': { bg: '#D2C4FF', border: '#9984DF' },
-    'Amarillo 1': { bg: '#FFF9E6', border: '#CFAB32' },
+    'Amarillo 1': { bg: '#FFE383', border: '#CFAB32' },
     'Amarillo 2': { bg: '#FFEEB5', border: '#CFAB32' },
     'Amarillo 3': { bg: '#FFE383', border: '#CFAB32' },
     'Rosado': { bg: '#FFBBDA', border: '#E596BA' }
