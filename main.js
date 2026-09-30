@@ -749,37 +749,6 @@ const initConceptsList = () => {
   });
 };
 
-// Stagger fade-up animation
-const initFadeUpStagger = () => {
-  const elements = document.querySelectorAll('[data-gsap="fade-up"]');
-  
-  if (!elements.length) return;
-
-  let mmFadein = gsap.matchMedia();
-
-  mmFadein.add("(min-width: 992px)", () => {
-    gsap.set(elements, { opacity: 0 });
-
-    ScrollTrigger.batch(elements, {
-      start: 'top 85%',
-      onEnter: batchElements => gsap.fromTo(batchElements, 
-        {
-          y: 50,
-          opacity: 0
-        },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 1.5,
-          ease: 'power2.out',
-          stagger: 0.2,
-          overwrite: true
-        }
-      )
-    });
-  });
-};
-
 // Fade out scroll masks when scrolled to the end of a container
 const initScrollMasks = () => {
   const elements = document.querySelectorAll('.filters-scroll-wrap, .filtered-studios-list, .events-cards, .filters-scroll-wrap-blog');
@@ -975,7 +944,6 @@ const initApp = () => {
   initCurrentLink();
   initHeroCarousel();
   initConceptsList();
-  initFadeUpStagger();
   initScrollMasks();
   initFooterEffects();
   initNewsletterForm();
