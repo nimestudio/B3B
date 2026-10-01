@@ -81,9 +81,75 @@ const initFiltersAnimation = () => {
   scrollObserver.observe(wrapper);
 };
 
+function addStudioDisciplinesSchema(attempt = 0) {
+  const schemaScript = document.querySelector('#studio-schema');
+  const disciplines = document.querySelectorAll('.concepts-list .concept-item');
+
+  if ((!schemaScript || !disciplines.length) && attempt < 20) {
+    setTimeout(() => addStudioDisciplinesSchema(attempt + 1), 250);
+    return;
+  }
+
+  if (!schemaScript || !disciplines.length) return;
+  if (schemaScript.dataset.disciplinesAdded === 'true') return;
+
+  let schema;
+
+  try {
+    schema = JSON.parse(schemaScript.textContent);
+  } catch (error) {
+    console.error('Studio schema JSON could not be parsed:', error);
+    return;
+  }
+
+  if (!schema.mainEntity) return;
+
+  const items = Array.from(disciplines)
+    .map(item => {
+      const nameElement = item.querySelector('.concept-title h3');
+      const descriptionElement = item.querySelector('.rt-concept-desc');
+
+      if (!nameElement) return null;
+
+      const name = nameElement.innerText.trim();
+      const description = descriptionElement
+        ? descriptionElement.innerText.trim()
+        : '';
+
+      if (!name) return null;
+
+      const service = {
+        "@type": "Service",
+        "name": name
+      };
+
+      if (description) {
+        service.description = description;
+      }
+
+      return {
+        "@type": "Offer",
+        "itemOffered": service
+      };
+    })
+    .filter(Boolean);
+
+  if (!items.length) return;
+
+  schema.mainEntity.hasOfferCatalog = {
+    "@type": "OfferCatalog",
+    "name": "Clases y disciplinas",
+    "itemListElement": items
+  };
+
+  schemaScript.textContent = JSON.stringify(schema);
+  schemaScript.dataset.disciplinesAdded = 'true';
+}
+
 const initAll = () => {
   updateBookLinks();
   initFiltersAnimation();
+  addStudioDisciplinesSchema();
 };
 
 document.addEventListener('DOMContentLoaded', initAll);
