@@ -106,6 +106,9 @@ function switchSchedule(hostId, btn) {
                     font-weight: 400;
                 }
 
+                #momence-plugin-host-schedule .momence-host_schedule-session_list-item-price {
+                display: none !important;}
+
                 #momence-plugin-host-schedule h4.momence-host_schedule-session_list-item-title,
                 #momence-plugin-host-schedule .momence-host_schedule-session_list-item-price > div {
                     font-family: 'Owners Wide', Impact, sans-serif;
