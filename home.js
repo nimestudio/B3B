@@ -7,67 +7,25 @@ const initHeroLoader = () => {
   if (!loaderWrap) return;
 
   const gridContainer = document.querySelector(".hero-grid-container");
-  const gridItems = document.querySelectorAll(
-    ".hero-grid-item:not(.video-cell)"
-  );
+  const gridItems = document.querySelectorAll(".hero-grid-item:not(.video-cell)");
   const allItems = document.querySelectorAll(".hero-grid-item");
   const heroImages = document.querySelectorAll(".hero-image");
-  const heroContent = document.querySelectorAll(
-    ".home-hero-text-wrap > *"
-  );
+  const heroContent = document.querySelectorAll(".home-hero-text-wrap > *");
   const navbar = document.querySelector(".navbar-overlay");
   const heroCursor = document.querySelector(".hero-cursor");
   const videoButton = document.querySelector(".play-pause-btn");
   const videoCell = document.querySelector(".video-cell");
+  
+  const isMobile = window.matchMedia("(max-width: 767px)").matches;
+  const video = document.querySelector(isMobile ? ".hero-video-mobile" : ".hero-video-desktop");
 
-  // =========================================
-  // VIDEO INITIALIZATION
-  // =========================================
-
-  const isMobile = window.matchMedia(
-    "(max-width: 767px)"
-  ).matches;
-
-  const desktopVideo = videoCell.querySelector(
-    ".hero-video-desktop"
-  );
-
-  const mobileVideo = videoCell.querySelector(
-    ".hero-video-mobile"
-  );
-
-  // Select exactly one video.
-  const video = isMobile ? mobileVideo : desktopVideo;
-
-  // Explicitly disable the inactive video.
-  const inactiveVideo = isMobile ? desktopVideo : mobileVideo;
-
-  if (inactiveVideo) {
-    inactiveVideo.pause();
-    inactiveVideo.removeAttribute("src");
-
-    inactiveVideo.querySelectorAll("source").forEach(source => {
-      source.removeAttribute("src");
-    });
-
-    inactiveVideo.preload = "none";
-    inactiveVideo.load();
-  }
-
-  // Initialize only the selected video.
   if (video) {
-    const dataSrc = video.dataset.src;
-
+    const dataSrc = video.getAttribute("data-src");
     if (dataSrc) {
-      video.preload = "auto";
-      video.src = dataSrc;
+      video.setAttribute("src", dataSrc);
       video.load();
     }
   }
-
-  // =========================================
-  // GSAP INITIAL STATES
-  // =========================================
 
   gsap.set(gridContainer, {
     scale: 1.5,
@@ -78,17 +36,8 @@ const initHeroLoader = () => {
 
   gsap.set(heroImages, { scale: 1.2 });
   gsap.set(allItems, { borderRadius: "0.25rem" });
-
-  gsap.set(
-    [heroContent, heroCursor, videoButton],
-    { opacity: 0 }
-  );
-
+  gsap.set([heroContent, heroCursor, videoButton], { opacity: 0 });
   gsap.set(navbar, { y: "-100%" });
-
-  // =========================================
-  // MAIN ANIMATION
-  // =========================================
 
   const startAnimation = () => {
     const tl1 = gsap.timeline({
@@ -101,43 +50,32 @@ const initHeroLoader = () => {
       delay: 0.6,
       ease: "power2.out"
     })
-
     .to(gridContainer, {
       rotation: 0,
       scale: 1.8,
       gap: "0.556rem",
       duration: 1.5
     }, "-=0.6")
-
     .to(heroImages, {
       scale: 1.05,
       duration: 1.5
     }, "<")
-
     .to(allItems, {
       borderRadius: "0.3rem",
       duration: 1.5
     }, "<")
-
     .add(() => {
       const state = Flip.getState(videoCell);
 
       const placeholder = document.createElement("div");
       placeholder.className = videoCell.className;
       placeholder.style.visibility = "hidden";
-
-      videoCell.parentNode.insertBefore(
-        placeholder,
-        videoCell
-      );
+      videoCell.parentNode.insertBefore(placeholder, videoCell);
 
       loaderWrap.appendChild(videoCell);
-
       videoCell.classList.add("is-fullscreen");
-
       gsap.set(videoCell, { zIndex: 999 });
 
-      // Play only the selected video.
       if (video) {
         video.play().catch(() => {});
       }
@@ -150,54 +88,42 @@ const initHeroLoader = () => {
 
       const tl2 = gsap.timeline({
         onComplete: () => {
-          window.dispatchEvent(
-            new Event("heroLoaderFinished")
-          );
+          window.dispatchEvent(new Event("heroLoaderFinished"));
         }
       });
 
       tl2.add(flipAnim, 0)
-
       .to(gridContainer, {
         scale: 5.2,
         gap: "0rem",
         duration: 1.6,
         ease: "expo.inOut"
       }, 0)
-
       .to(allItems, {
         borderRadius: "0rem",
         duration: 1.6,
         ease: "expo.inOut"
       }, 0)
-
       .to(gridItems, {
         opacity: 0,
         duration: 0.8,
         ease: "power2.in"
       }, 0.4)
-
-      .set(loaderWrap, {
-        pointerEvents: "none"
-      })
-
+      .set(loaderWrap, { pointerEvents: "none" })
       .to(navbar, {
         y: "0%",
         duration: 1,
         ease: "power2.out"
       }, "-=0.2")
-
       .to(heroContent, {
         opacity: 1,
         duration: 1,
         stagger: 0.2
       }, "<0.3")
-
       .to(videoButton, {
         opacity: 1,
         duration: 0.8
       }, "<0.3")
-
       .to(heroCursor, {
         opacity: 1,
         duration: 0.5
@@ -205,34 +131,27 @@ const initHeroLoader = () => {
     });
   };
 
-  // =========================================
-  // VIDEO LOADING / ANIMATION GATE
-  // =========================================
-
   let hasStarted = false;
-  let fallbackTimer;
-
   const checkStart = () => {
-    if (hasStarted) return;
-
-    hasStarted = true;
-
-    clearTimeout(fallbackTimer);
-
-    startAnimation();
+    if (!hasStarted) {
+      hasStarted = true;
+      if (video) {
+        video.play().catch(() => {});
+      }
+      startAnimation();
+    }
   };
 
-  if (!video || !video.hasAttribute("src")) {
-  checkStart();
-} else {
-  if (video.readyState >= 3) {
+  if (!video) {
     checkStart();
   } else {
-    video.addEventListener("canplay", checkStart, { once: true });
+    if (video.readyState >= 3) {
+      checkStart();
+    } else {
+      video.addEventListener("canplay", checkStart, { once: true });
+    }
+    setTimeout(checkStart, 4000);
   }
-
-  fallbackTimer = setTimeout(checkStart, 4000);
-}
 };
 
 
