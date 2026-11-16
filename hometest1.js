@@ -222,22 +222,17 @@ const initHeroLoader = () => {
     startAnimation();
   };
 
-  if (!video || !video.src) {
+  if (!video || !video.hasAttribute("src")) {
+  checkStart();
+} else {
+  if (video.readyState >= 3) {
     checkStart();
   } else {
-    if (video.readyState >= 3) {
-      checkStart();
-    } else {
-      video.addEventListener(
-        "canplay",
-        checkStart,
-        { once: true }
-      );
-    }
-
-    // Never let video loading block the hero animation.
-    fallbackTimer = setTimeout(checkStart, 4000);
+    video.addEventListener("canplay", checkStart, { once: true });
   }
+
+  fallbackTimer = setTimeout(checkStart, 4000);
+}
 };
 
 
@@ -310,7 +305,7 @@ const initVideoControls = () => {
   const playIcon = playPauseBtn.querySelector('.video-button-play');
 
   playPauseBtn.addEventListener('click', () => {
-    const isMobile = window.matchMedia("(max-width: 480px)").matches;
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
     const video = document.querySelector(isMobile ? ".hero-video-mobile" : ".hero-video-desktop");
 
     if (!video) return;
